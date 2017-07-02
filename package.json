@@ -48,6 +48,7 @@
     "webpack": "^2.6.1",
     "webpack-dev-server": "^2.4.5",
     "rollup": "^0.43.0",
-    "rollup-plugin-babel": "^2.7.1"
+    "rollup-plugin-babel": "^2.7.1",
+    "vconsole": "^2.5.1"
   }
 }

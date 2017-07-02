@@ -21,6 +21,9 @@ import {ease} from '../util/ease';
 import {EventEmitter} from '../util/eventEmitter';
 import {momentum} from '../util/momentum';
 
+/* eslint-disable no-unused-vars */
+// import vConsole from 'vconsole';
+
 const TOUCH_EVENT = 1;
 
 export class BScroll extends EventEmitter {
@@ -51,6 +54,8 @@ export class BScroll extends EventEmitter {
       deceleration: 0.001,
       momentumLimitTime: 300,
       momentumLimitDistance: 15,
+      flickLimitTime: 200,
+      flickLimitDistance: 100,
       resizePolling: 60,
       preventDefault: true,
       preventDefaultException: {
@@ -58,7 +63,8 @@ export class BScroll extends EventEmitter {
       },
       HWCompositing: true,
       useTransition: true,
-      useTransform: true
+      useTransform: true,
+      autoScroll: false
     };
 
     extend(this.options, options);
@@ -87,6 +93,10 @@ export class BScroll extends EventEmitter {
 
     if (this.options.snap) {
       this._initSnap();
+    }
+
+    if (this.options.autoScroll) {
+      this._initAutoScroll();
     }
 
     this.refresh();
@@ -317,6 +327,100 @@ export class BScroll extends EventEmitter {
     };
   }
 
+  _initAutoScroll() {
+    const {initialRate = 0.5, increase = 50, direction = 'vertical', stopEl} = this.options.autoScroll;
+    let lastDirectionX = 0;
+    let lastDirectionY = 0;
+    let isContinue = false;
+    this.scrollStamp = 0;
+    let stopTop;
+    let stopBottom;
+    let stopLeft;
+    let stopRight;
+
+    if (stopEl) {
+      if (direction === 'vertical') {
+        stopBottom = typeof stopEl.bottom === 'string' ? document.querySelector(stopEl.bottom) : stopEl.bottom;
+        stopTop = typeof stopEl.top === 'string' ? document.querySelector(stopEl.top) : stopEl.top;
+      } else {
+        stopLeft = typeof stopEl.left === 'string' ? document.querySelector(stopEl.left) : stopEl.left;
+        stopRight = typeof stopEl.right === 'string' ? document.querySelector(stopEl.right) : stopEl.right;
+      }
+    }
+
+    this.on('flick', ({delta, duration}) => {
+      let newX = Math.round(this.x);
+      let newY = Math.round(this.y);
+      let distanceX;
+      let distanceY;
+      let time = 0;
+      let easing = ease.linear;
+      isContinue = +new Date() - this.scrollStamp < this.options.flickLimitTime;
+
+      if (direction === 'vertical') {
+        if (this.directionY === 1) {
+          if (stopBottom) {
+            let pos = offset(stopBottom);
+            distanceY = Math.abs(pos.top - newY);
+            newY = pos.top > 0 ? 0 : pos.top < this.maxScrollY ? this.maxScrollY : pos.top;
+          } else {
+            distanceY = Math.abs(this.maxScrollY - newY);
+            newY = this.maxScrollY;
+          }
+        } else {
+          if (stopTop) {
+            let pos = offset(stopTop);
+            distanceY = Math.abs(pos.top - newY);
+            newY = pos.top > 0 ? 0 : pos.top < this.maxScrollY ? this.maxScrollY : pos.top;
+          } else {
+            distanceY = Math.abs(newY);
+            newY = 0;
+          }
+        }
+
+        if (!isContinue || !lastDirectionY || lastDirectionY !== this.directionY) {
+          let speed = Math.abs(delta.y) * 2 / duration * 1000 * initialRate;
+          this.speed = speed;
+        } else {
+          this.speed += increase;
+        }
+        lastDirectionY = this.directionY;
+        time = distanceY / this.speed * 1000;
+      } else {
+        if (this.directionX === 1) {
+          if (stopRight) {
+            let pos = offset(stopRight);
+            distanceX = Math.abs(pos.left - newX);
+            newX = pos.left > 0 ? 0 : pos.left < this.maxScrollX ? this.maxScrollX : pos.left;
+          } else {
+            distanceX = Math.abs(this.maxScrollX - newX);
+            newX = this.maxScrollX;
+          }
+        } else {
+          if (stopLeft) {
+            let pos = offset(stopLeft);
+            distanceX = Math.abs(pos.left - newX);
+            newX = pos.left > 0 ? 0 : pos.left < this.maxScrollX ? this.maxScrollX : pos.left;
+          } else {
+            distanceX = Math.abs(newX);
+            newX = 0;
+          }
+        }
+
+        if (!isContinue || !lastDirectionX || lastDirectionX !== this.directionX) {
+          let speed = Math.abs(delta.x) * 2 / duration * 1000 * initialRate;
+          this.speed = speed;
+        } else {
+          this.speed += increase;
+        }
+        lastDirectionX = this.directionX;
+        time = distanceX / this.speed * 1000;
+      }
+
+      this.scrollTo(newX, newY, time, easing);
+    });
+  }
+
   _addEvents() {
     let eventOperation = addEvent;
     this._handleEvents(eventOperation);
@@ -390,6 +494,9 @@ export class BScroll extends EventEmitter {
       if (this.options.wheel) {
         this.target = this.items[Math.round(-pos.y / this.itemHeight)];
       } else {
+        if (this.options.autoScroll) {
+          this.scrollStamp = +new Date();
+        }
         this.trigger('scrollEnd', {
           x: this.x,
           y: this.y
@@ -590,15 +697,21 @@ export class BScroll extends EventEmitter {
     let absDistX = Math.abs(newX - this.startX);
     let absDistY = Math.abs(newY - this.startY);
 
-    // fastclick
-    if (this._events.flick && duration < this.options.momentumLimitTime && absDistX < this.options.momentumLimitDistance && absDistY < this.options.momentumLimitDistance) {
-      this.trigger('flick');
+    if (this._events.flick && duration < this.options.flickLimitTime && absDistX < this.options.flickLimitDistance && absDistY < this.options.flickLimitDistance) {
+      this.trigger('flick', {
+        delta: {
+          x: this.startX - this.x,
+          y: this.startY - this.y
+        },
+        duration
+      });
       return;
     }
 
     let time = 0;
+    let easing = ease.swipe;
     // start momentum animation if needed
-    if (this.options.momentum && duration < this.options.momentumLimitTime && (absDistY > this.options.momentumLimitDistance || absDistX > this.options.momentumLimitDistance)) {
+    if (this.options.momentum && !this.options.autoScroll && duration < this.options.momentumLimitTime && (absDistY > this.options.momentumLimitDistance || absDistX > this.options.momentumLimitDistance)) {
       let momentumX = this.hasHorizontalScroll ? momentum(this.x, this.startX, duration, this.maxScrollX, this.options.bounce ? this.wrapperWidth : 0, this.options)
         : {destination: newX, duration: 0};
       let momentumY = this.hasVerticalScroll ? momentum(this.y, this.startY, duration, this.maxScrollY, this.options.bounce ? this.wrapperHeight : 0, this.options)
@@ -614,7 +727,6 @@ export class BScroll extends EventEmitter {
       }
     }
 
-    let easing = ease.swipe;
     if (this.options.snap) {
       let snap = this._nearestSnap(newX, newY);
       this.currentPage = snap;
