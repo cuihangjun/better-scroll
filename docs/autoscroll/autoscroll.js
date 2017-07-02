@@ -28,6 +28,7 @@ function initPixDom(pixes) {
 
 function initScroll() {
   var wrapper = document.getElementById('wrapper')
+  var speed = document.getElementById('speed')
   var scroll = new window.BScroll(wrapper, {
     autoScroll: {
       initialRate: 0.8,
@@ -38,7 +39,12 @@ function initScroll() {
         bottom: '#bottom'
       }
     },
-    flickLimitDistance: 400
+    flickLimitDistance: 400,
+    probeType: 3
+  })
+
+  scroll.on('scroll', function () {
+    speed.innerText = 'speed:' + this.speed
   })
 }
 
