@@ -1,5 +1,5 @@
 /*!
- * better-scroll v0.2.3
+ * better-scroll v0.2.4
  * (c) 2016-2017 ustbhuangyi
  * Released under the MIT License.
  */
@@ -177,27 +177,31 @@ var cancelAnimationFrame = function () {
 var isBadAndroid = /Android /.test(window.navigator.appVersion) && !/Chrome\/\d/.test(window.navigator.appVersion);
 
 var ease = {
-	// easeOutQuint
-	swipe: {
-		style: 'cubic-bezier(0.23, 1, 0.32, 1)',
-		fn: function fn(t) {
-			return 1 + --t * t * t * t * t;
-		}
-	},
-	// easeOutQuard
-	swipeBounce: {
-		style: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-		fn: function fn(t) {
-			return t * (2 - t);
-		}
-	},
-	// easeOutQuart
-	bounce: {
-		style: 'cubic-bezier(0.165, 0.84, 0.44, 1)',
-		fn: function fn(t) {
-			return 1 - --t * t * t * t;
-		}
-	}
+  // easeOutQuint
+  swipe: {
+    style: 'cubic-bezier(0.23, 1, 0.32, 1)',
+    fn: function fn(t) {
+      return 1 + --t * t * t * t * t;
+    }
+  },
+  // easeOutQuard
+  swipeBounce: {
+    style: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+    fn: function fn(t) {
+      return t * (2 - t);
+    }
+  },
+  // easeOutQuart
+  bounce: {
+    style: 'cubic-bezier(0.165, 0.84, 0.44, 1)',
+    fn: function fn(t) {
+      return 1 - --t * t * t * t;
+    }
+  },
+  // linear
+  linear: {
+    style: 'linear'
+  }
 };
 
 var classCallCheck = function (instance, Constructor) {
@@ -439,6 +443,9 @@ function momentum(current, start, time, lowerMargin, wrapperSize, options) {
 	};
 }
 
+/* eslint-disable no-unused-vars */
+// import vConsole from 'vconsole';
+
 var TOUCH_EVENT = 1;
 
 var BScroll$1 = function (_EventEmitter) {
@@ -474,6 +481,8 @@ var BScroll$1 = function (_EventEmitter) {
       deceleration: 0.001,
       momentumLimitTime: 300,
       momentumLimitDistance: 15,
+      flickLimitTime: 200,
+      flickLimitDistance: 100,
       resizePolling: 60,
       preventDefault: true,
       preventDefaultException: {
@@ -481,7 +490,8 @@ var BScroll$1 = function (_EventEmitter) {
       },
       HWCompositing: true,
       useTransition: true,
-      useTransform: true
+      useTransform: true,
+      autoScroll: false
     };
 
     extend(_this.options, options);
@@ -510,6 +520,10 @@ var BScroll$1 = function (_EventEmitter) {
 
     if (_this.options.snap) {
       _this._initSnap();
+    }
+
+    if (_this.options.autoScroll) {
+      _this._initAutoScroll();
     }
 
     _this.refresh();
@@ -738,6 +752,114 @@ var BScroll$1 = function (_EventEmitter) {
       };
     }
   }, {
+    key: '_initAutoScroll',
+    value: function _initAutoScroll() {
+      var _this3 = this;
+
+      var _options$autoScroll = this.options.autoScroll,
+          _options$autoScroll$i = _options$autoScroll.initialRate,
+          initialRate = _options$autoScroll$i === undefined ? 0.5 : _options$autoScroll$i,
+          _options$autoScroll$i2 = _options$autoScroll.increase,
+          increase = _options$autoScroll$i2 === undefined ? 50 : _options$autoScroll$i2,
+          _options$autoScroll$d = _options$autoScroll.direction,
+          direction = _options$autoScroll$d === undefined ? 'vertical' : _options$autoScroll$d,
+          stopEl = _options$autoScroll.stopEl;
+
+      var lastDirectionX = 0;
+      var lastDirectionY = 0;
+      var isContinue = false;
+      this.scrollStamp = 0;
+      var stopTop = void 0;
+      var stopBottom = void 0;
+      var stopLeft = void 0;
+      var stopRight = void 0;
+
+      if (stopEl) {
+        if (direction === 'vertical') {
+          stopBottom = typeof stopEl.bottom === 'string' ? document.querySelector(stopEl.bottom) : stopEl.bottom;
+          stopTop = typeof stopEl.top === 'string' ? document.querySelector(stopEl.top) : stopEl.top;
+        } else {
+          stopLeft = typeof stopEl.left === 'string' ? document.querySelector(stopEl.left) : stopEl.left;
+          stopRight = typeof stopEl.right === 'string' ? document.querySelector(stopEl.right) : stopEl.right;
+        }
+      }
+
+      this.on('flick', function (_ref) {
+        var delta = _ref.delta,
+            duration = _ref.duration;
+
+        var newX = Math.round(_this3.x);
+        var newY = Math.round(_this3.y);
+        var distanceX = void 0;
+        var distanceY = void 0;
+        var time = 0;
+        var easing = ease.linear;
+        isContinue = +new Date() - _this3.scrollStamp < _this3.options.flickLimitTime;
+
+        if (direction === 'vertical') {
+          if (_this3.directionY === 1) {
+            if (stopBottom) {
+              var pos = offset(stopBottom);
+              distanceY = Math.abs(pos.top - newY);
+              newY = pos.top > 0 ? 0 : pos.top < _this3.maxScrollY ? _this3.maxScrollY : pos.top;
+            } else {
+              distanceY = Math.abs(_this3.maxScrollY - newY);
+              newY = _this3.maxScrollY;
+            }
+          } else {
+            if (stopTop) {
+              var _pos = offset(stopTop);
+              distanceY = Math.abs(_pos.top - newY);
+              newY = _pos.top > 0 ? 0 : _pos.top < _this3.maxScrollY ? _this3.maxScrollY : _pos.top;
+            } else {
+              distanceY = Math.abs(newY);
+              newY = 0;
+            }
+          }
+
+          if (!isContinue || !lastDirectionY || lastDirectionY !== _this3.directionY) {
+            var speed = Math.abs(delta.y) * 2 / duration * 1000 * initialRate;
+            _this3.speed = speed;
+          } else {
+            _this3.speed += increase;
+          }
+          lastDirectionY = _this3.directionY;
+          time = distanceY / _this3.speed * 1000;
+        } else {
+          if (_this3.directionX === 1) {
+            if (stopRight) {
+              var _pos2 = offset(stopRight);
+              distanceX = Math.abs(_pos2.left - newX);
+              newX = _pos2.left > 0 ? 0 : _pos2.left < _this3.maxScrollX ? _this3.maxScrollX : _pos2.left;
+            } else {
+              distanceX = Math.abs(_this3.maxScrollX - newX);
+              newX = _this3.maxScrollX;
+            }
+          } else {
+            if (stopLeft) {
+              var _pos3 = offset(stopLeft);
+              distanceX = Math.abs(_pos3.left - newX);
+              newX = _pos3.left > 0 ? 0 : _pos3.left < _this3.maxScrollX ? _this3.maxScrollX : _pos3.left;
+            } else {
+              distanceX = Math.abs(newX);
+              newX = 0;
+            }
+          }
+
+          if (!isContinue || !lastDirectionX || lastDirectionX !== _this3.directionX) {
+            var _speed = Math.abs(delta.x) * 2 / duration * 1000 * initialRate;
+            _this3.speed = _speed;
+          } else {
+            _this3.speed += increase;
+          }
+          lastDirectionX = _this3.directionX;
+          time = distanceX / _this3.speed * 1000;
+        }
+
+        _this3.scrollTo(newX, newY, time, easing);
+      });
+    }
+  }, {
     key: '_addEvents',
     value: function _addEvents() {
       var eventOperation = addEvent;
@@ -815,6 +937,9 @@ var BScroll$1 = function (_EventEmitter) {
         if (this.options.wheel) {
           this.target = this.items[Math.round(-pos.y / this.itemHeight)];
         } else {
+          if (this.options.autoScroll) {
+            this.scrollStamp = +new Date();
+          }
           this.trigger('scrollEnd', {
             x: this.x,
             y: this.y
@@ -1016,15 +1141,21 @@ var BScroll$1 = function (_EventEmitter) {
       var absDistX = Math.abs(newX - this.startX);
       var absDistY = Math.abs(newY - this.startY);
 
-      // fastclick
-      if (this._events.flick && duration < this.options.momentumLimitTime && absDistX < this.options.momentumLimitDistance && absDistY < this.options.momentumLimitDistance) {
-        this.trigger('flick');
+      if (this._events.flick && duration < this.options.flickLimitTime && absDistX < this.options.flickLimitDistance && absDistY < this.options.flickLimitDistance) {
+        this.trigger('flick', {
+          delta: {
+            x: this.startX - this.x,
+            y: this.startY - this.y
+          },
+          duration: duration
+        });
         return;
       }
 
       var time = 0;
+      var easing = ease.swipe;
       // start momentum animation if needed
-      if (this.options.momentum && duration < this.options.momentumLimitTime && (absDistY > this.options.momentumLimitDistance || absDistX > this.options.momentumLimitDistance)) {
+      if (this.options.momentum && !this.options.autoScroll && duration < this.options.momentumLimitTime && (absDistY > this.options.momentumLimitDistance || absDistX > this.options.momentumLimitDistance)) {
         var momentumX = this.hasHorizontalScroll ? momentum(this.x, this.startX, duration, this.maxScrollX, this.options.bounce ? this.wrapperWidth : 0, this.options) : { destination: newX, duration: 0 };
         var momentumY = this.hasVerticalScroll ? momentum(this.y, this.startY, duration, this.maxScrollY, this.options.bounce ? this.wrapperHeight : 0, this.options) : { destination: newY, duration: 0 };
         newX = momentumX.destination;
@@ -1038,7 +1169,6 @@ var BScroll$1 = function (_EventEmitter) {
         }
       }
 
-      var easing = ease.swipe;
       if (this.options.snap) {
         var snap = this._nearestSnap(newX, newY);
         this.currentPage = snap;
@@ -1071,7 +1201,7 @@ var BScroll$1 = function (_EventEmitter) {
   }, {
     key: '_resize',
     value: function _resize() {
-      var _this3 = this;
+      var _this4 = this;
 
       if (!this.enabled) {
         return;
@@ -1079,7 +1209,7 @@ var BScroll$1 = function (_EventEmitter) {
 
       clearTimeout(this.resizeTimeout);
       this.resizeTimeout = setTimeout(function () {
-        _this3.refresh();
+        _this4.refresh();
       }, this.options.resizePolling);
     }
   }, {
@@ -1101,7 +1231,7 @@ var BScroll$1 = function (_EventEmitter) {
   }, {
     key: '_transitionTime',
     value: function _transitionTime() {
-      var _this4 = this;
+      var _this5 = this;
 
       var time = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
 
@@ -1117,8 +1247,8 @@ var BScroll$1 = function (_EventEmitter) {
         this.scrollerStyle[style.transitionDuration] = '0.001s';
 
         requestAnimationFrame(function () {
-          if (_this4.scrollerStyle[style.transitionDuration] === '0.0001ms') {
-            _this4.scrollerStyle[style.transitionDuration] = '0s';
+          if (_this5.scrollerStyle[style.transitionDuration] === '0.0001ms') {
+            _this5.scrollerStyle[style.transitionDuration] = '0s';
           }
         });
       }
