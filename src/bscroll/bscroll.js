@@ -328,7 +328,7 @@ export class BScroll extends EventEmitter {
   }
 
   _initAutoScroll() {
-    const {initialRate = 0.5, increase = 50, direction = 'vertical', stopEl} = this.options.autoScroll;
+    const {initialRate = 0.5, increase = 50, direction = 'vertical', stopEl, maxSpeed} = this.options.autoScroll;
     let lastDirectionX = 0;
     let lastDirectionY = 0;
     let isContinue = false;
@@ -384,6 +384,7 @@ export class BScroll extends EventEmitter {
         } else {
           this.speed += increase;
         }
+        this.speed = Math.min(this.speed, maxSpeed);
         lastDirectionY = this.directionY;
         time = distanceY / this.speed * 1000;
       } else {
@@ -413,6 +414,7 @@ export class BScroll extends EventEmitter {
         } else {
           this.speed += increase;
         }
+        this.speed = Math.min(this.speed, maxSpeed);
         lastDirectionX = this.directionX;
         time = distanceX / this.speed * 1000;
       }
@@ -487,22 +489,7 @@ export class BScroll extends EventEmitter {
       this.target = e.target;
     }
 
-    if (this.options.useTransition && this.isInTransition) {
-      this.isInTransition = false;
-      let pos = this.getComputedPosition();
-      this._translate(pos.x, pos.y);
-      if (this.options.wheel) {
-        this.target = this.items[Math.round(-pos.y / this.itemHeight)];
-      } else {
-        if (this.options.autoScroll) {
-          this.scrollStamp = +new Date();
-        }
-        this.trigger('scrollEnd', {
-          x: this.x,
-          y: this.y
-        });
-      }
-    }
+    this.stop();
 
     let point = e.touches ? e.touches[0] : e;
 
@@ -965,6 +952,25 @@ export class BScroll extends EventEmitter {
         } else {
           this.selectedIndex = Math.abs(y / this.itemHeight) | 0;
         }
+      }
+    }
+  }
+
+  stop() {
+    if (this.options.useTransition && this.isInTransition) {
+      this.isInTransition = false;
+      let pos = this.getComputedPosition();
+      this._translate(pos.x, pos.y);
+      if (this.options.wheel) {
+        this.target = this.items[Math.round(-pos.y / this.itemHeight)];
+      } else {
+        if (this.options.autoScroll) {
+          this.scrollStamp = +new Date();
+        }
+        this.trigger('scrollEnd', {
+          x: this.x,
+          y: this.y
+        });
       }
     }
   }
