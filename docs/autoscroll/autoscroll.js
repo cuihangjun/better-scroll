@@ -24,15 +24,17 @@ function initPixDom(pixes) {
   var pixHtml = window.Handlebars.compile(pixTpl)(pixes)
   var pixWrapper = document.getElementById('pix-wrapper')
   pixWrapper.innerHTML = pixHtml
+  return pixWrapper
 }
 
-function initScroll() {
+function initScroll(heights, pixes) {
   var wrapper = document.getElementById('wrapper')
   var speed = document.getElementById('speed')
   var scroll = new window.BScroll(wrapper, {
     autoScroll: {
       initialRate: 0.8,
       increase: 50,
+      maxSpeed: 600,
       direction: 'vertical',
       stopEl: {
         top: '#top',
@@ -43,17 +45,67 @@ function initScroll() {
     probeType: 3
   })
 
-  scroll.on('scroll', function () {
+  scroll.on('scroll', function (pos) {
     speed.innerText = 'speed:' + this.speed
+    for (var i = 0; i < heights.length; i++) {
+      if (pos.y <= heights[i] && pos.y > heights[i + 1]) {
+        if (!pixes[i].loaded) {
+          this.stop()
+        }
+      }
+    }
   })
 }
 
 function init() {
   var pixes = mockPixes()
 
-  initPixDom(pixes)
+  var pixWrapper = initPixDom(pixes)
 
-  initScroll()
+  var heights = calculateHeight(pixWrapper)
+
+  preloadImage(pixes)
+
+  initScroll(heights, pixes)
+}
+
+function calculateHeight(pixWrapper) {
+  var images = pixWrapper.querySelectorAll('.pix')
+  var heights = []
+  for (var i = 0; i < images.length; i++) {
+    heights.push(offset(images[i]).top)
+  }
+  heights.push(heights[heights.length - 1] - images[heights.length - 1].clientHeight)
+  return heights
+}
+
+function preloadImage(pixes) {
+  for (var i = 0; i < pixes.length; i++) {
+    var img = new Image();
+    (function (index) {
+      img.onload = function () {
+        pixes[index].loaded = true
+        img.onload = null
+      }
+      img.src = pixes[i].src
+    })(i)
+  }
+}
+
+function offset(el) {
+  var left = 0
+  var top = 0
+
+  while (el) {
+    left -= el.offsetLeft
+    top -= el.offsetTop
+    el = el.offsetParent
+  }
+
+  return {
+    left: left,
+    top: top
+  }
 }
 
 init()
