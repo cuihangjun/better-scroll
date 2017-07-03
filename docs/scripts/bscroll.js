@@ -763,7 +763,8 @@ var BScroll$1 = function (_EventEmitter) {
           increase = _options$autoScroll$i2 === undefined ? 50 : _options$autoScroll$i2,
           _options$autoScroll$d = _options$autoScroll.direction,
           direction = _options$autoScroll$d === undefined ? 'vertical' : _options$autoScroll$d,
-          stopEl = _options$autoScroll.stopEl;
+          stopEl = _options$autoScroll.stopEl,
+          maxSpeed = _options$autoScroll.maxSpeed;
 
       var lastDirectionX = 0;
       var lastDirectionY = 0;
@@ -823,6 +824,7 @@ var BScroll$1 = function (_EventEmitter) {
           } else {
             _this3.speed += increase;
           }
+          _this3.speed = Math.min(_this3.speed, maxSpeed);
           lastDirectionY = _this3.directionY;
           time = distanceY / _this3.speed * 1000;
         } else {
@@ -852,6 +854,7 @@ var BScroll$1 = function (_EventEmitter) {
           } else {
             _this3.speed += increase;
           }
+          _this3.speed = Math.min(_this3.speed, maxSpeed);
           lastDirectionX = _this3.directionX;
           time = distanceX / _this3.speed * 1000;
         }
@@ -930,22 +933,7 @@ var BScroll$1 = function (_EventEmitter) {
         this.target = e.target;
       }
 
-      if (this.options.useTransition && this.isInTransition) {
-        this.isInTransition = false;
-        var pos = this.getComputedPosition();
-        this._translate(pos.x, pos.y);
-        if (this.options.wheel) {
-          this.target = this.items[Math.round(-pos.y / this.itemHeight)];
-        } else {
-          if (this.options.autoScroll) {
-            this.scrollStamp = +new Date();
-          }
-          this.trigger('scrollEnd', {
-            x: this.x,
-            y: this.y
-          });
-        }
-      }
+      this.stop();
 
       var point = e.touches ? e.touches[0] : e;
 
@@ -1430,6 +1418,26 @@ var BScroll$1 = function (_EventEmitter) {
           } else {
             this.selectedIndex = Math.abs(y / this.itemHeight) | 0;
           }
+        }
+      }
+    }
+  }, {
+    key: 'stop',
+    value: function stop() {
+      if (this.options.useTransition && this.isInTransition) {
+        this.isInTransition = false;
+        var pos = this.getComputedPosition();
+        this._translate(pos.x, pos.y);
+        if (this.options.wheel) {
+          this.target = this.items[Math.round(-pos.y / this.itemHeight)];
+        } else {
+          if (this.options.autoScroll) {
+            this.scrollStamp = +new Date();
+          }
+          this.trigger('scrollEnd', {
+            x: this.x,
+            y: this.y
+          });
         }
       }
     }
