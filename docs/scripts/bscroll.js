@@ -4,10 +4,12 @@
  * Released under the MIT License.
  */
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-	typeof define === 'function' && define.amd ? define(factory) :
-	(global.BScroll = factory());
-}(this, (function () { 'use strict';
+	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('vconsole')) :
+	typeof define === 'function' && define.amd ? define(['vconsole'], factory) :
+	(global.BScroll = factory(global.vconsole));
+}(this, (function (vconsole) { 'use strict';
+
+vconsole = vconsole && 'default' in vconsole ? vconsole['default'] : vconsole;
 
 var elementStyle = document.createElement('div').style;
 
@@ -444,8 +446,6 @@ function momentum(current, start, time, lowerMargin, wrapperSize, options) {
 }
 
 /* eslint-disable no-unused-vars */
-// import vConsole from 'vconsole';
-
 var TOUCH_EVENT = 1;
 
 var BScroll$1 = function (_EventEmitter) {
@@ -1118,8 +1118,15 @@ var BScroll$1 = function (_EventEmitter) {
 
       this.scrollTo(newX, newY);
 
-      var deltaX = newX - this.absStartX;
-      var deltaY = newY - this.absStartY;
+      var deltaX = void 0;
+      var deltaY = void 0;
+      if (this.options.autoScroll) {
+        deltaX = newX - this.startX;
+        deltaY = newY - this.startY;
+      } else {
+        deltaX = newX - this.absStartX;
+        deltaY = newY - this.absStartY;
+      }
       this.directionX = deltaX > 0 ? -1 : deltaX < 0 ? 1 : 0;
       this.directionY = deltaY > 0 ? -1 : deltaY < 0 ? 1 : 0;
 
