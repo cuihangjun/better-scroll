@@ -22,7 +22,7 @@ import {EventEmitter} from '../util/eventEmitter';
 import {momentum} from '../util/momentum';
 
 /* eslint-disable no-unused-vars */
-// import vConsole from 'vconsole';
+import vConsole from 'vconsole';
 
 const TOUCH_EVENT = 1;
 
@@ -673,8 +673,15 @@ export class BScroll extends EventEmitter {
 
     this.scrollTo(newX, newY);
 
-    let deltaX = newX - this.absStartX;
-    let deltaY = newY - this.absStartY;
+    let deltaX;
+    let deltaY;
+    if (this.options.autoScroll) {
+      deltaX = newX - this.startX;
+      deltaY = newY - this.startY;
+    } else {
+      deltaX = newX - this.absStartX;
+      deltaY = newY - this.absStartY;
+    }
     this.directionX = deltaX > 0 ? -1 : deltaX < 0 ? 1 : 0;
     this.directionY = deltaY > 0 ? -1 : deltaY < 0 ? 1 : 0;
 

@@ -51,6 +51,7 @@ function initScroll(heights, pixes) {
       if (pos.y <= heights[i] && pos.y > heights[i + 1]) {
         if (!pixes[i].loaded) {
           this.stop()
+          break
         }
       }
     }
