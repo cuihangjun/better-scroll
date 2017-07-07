@@ -22,7 +22,7 @@ import {EventEmitter} from '../util/eventEmitter';
 import {momentum} from '../util/momentum';
 
 /* eslint-disable no-unused-vars */
-import vConsole from 'vconsole';
+// import vConsole from 'vconsole';
 
 const TOUCH_EVENT = 1;
 
