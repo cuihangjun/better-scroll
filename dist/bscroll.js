@@ -1,5 +1,5 @@
 /*!
- * better-scroll v0.2.4
+ * better-scroll v0.3.0
  * (c) 2016-2017 ustbhuangyi
  * Released under the MIT License.
  */
@@ -1622,7 +1622,7 @@ var BScroll$1 = function (_EventEmitter) {
   return BScroll;
 }(EventEmitter);
 
-BScroll$1.Version = '0.2.4';
+BScroll$1.Version = '0.3.0';
 
 return BScroll$1;
 
