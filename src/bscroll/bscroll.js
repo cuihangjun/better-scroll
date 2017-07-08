@@ -967,6 +967,14 @@ export class BScroll extends EventEmitter {
     if (this.options.useTransition && this.isInTransition) {
       this.isInTransition = false;
       let pos = this.getComputedPosition();
+      if (this.options.autoScroll && this.speed) {
+        let antiSlip = (this.speed / 45 + Math.pow(this.speed / 230, 2));
+        if (this.options.autoScroll.direction === 'vertical') {
+          pos.y -= this.directionY * antiSlip;
+        } else {
+          pos.x -= this.directionX * antiSlip;
+        }
+      }
       this._translate(pos.x, pos.y);
       if (this.options.wheel) {
         this.target = this.items[Math.round(-pos.y / this.itemHeight)];
