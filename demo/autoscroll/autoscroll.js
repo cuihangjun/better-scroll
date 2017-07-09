@@ -56,6 +56,11 @@ function initScroll(heights, pixes) {
       }
     }
   })
+
+  var header = document.getElementById('fixed-header')
+  header.addEventListener('click', function () {
+    scroll.scrollTo(0, 0, 300)
+  })
 }
 
 function init() {

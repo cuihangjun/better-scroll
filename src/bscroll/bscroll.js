@@ -329,8 +329,8 @@ export class BScroll extends EventEmitter {
 
   _initAutoScroll() {
     const {initialRate = 0.5, increase = 50, direction = 'vertical', stopEl, maxSpeed} = this.options.autoScroll;
-    let lastDirectionX = 0;
-    let lastDirectionY = 0;
+    this.lastDirectionX = 0;
+    this.lastDirectionY = 0;
     let isContinue = false;
     this.scrollStamp = 0;
     let stopTop;
@@ -378,14 +378,14 @@ export class BScroll extends EventEmitter {
           }
         }
 
-        if (!isContinue || !lastDirectionY || lastDirectionY !== this.directionY) {
+        if (!isContinue || !this.lastDirectionY || this.lastDirectionY !== this.directionY) {
           let speed = Math.abs(delta.y) * 2 / duration * 1000 * initialRate;
           this.speed = speed;
         } else {
           this.speed += increase;
         }
         this.speed = Math.min(this.speed, maxSpeed);
-        lastDirectionY = this.directionY;
+        this.lastDirectionY = this.directionY;
         time = distanceY / this.speed * 1000;
       } else {
         if (this.directionX === 1) {
@@ -408,14 +408,14 @@ export class BScroll extends EventEmitter {
           }
         }
 
-        if (!isContinue || !lastDirectionX || lastDirectionX !== this.directionX) {
+        if (!isContinue || !this.lastDirectionX || this.lastDirectionX !== this.directionX) {
           let speed = Math.abs(delta.x) * 2 / duration * 1000 * initialRate;
           this.speed = speed;
         } else {
           this.speed += increase;
         }
         this.speed = Math.min(this.speed, maxSpeed);
-        lastDirectionX = this.directionX;
+        this.lastDirectionX = this.directionX;
         time = distanceX / this.speed * 1000;
       }
 
@@ -970,9 +970,9 @@ export class BScroll extends EventEmitter {
       if (this.options.autoScroll && this.speed) {
         let antiSlip = (this.speed / 45 + Math.pow(this.speed / 230, 2));
         if (this.options.autoScroll.direction === 'vertical') {
-          pos.y -= this.directionY * antiSlip;
+          pos.y -= this.lastDirectionY * antiSlip;
         } else {
-          pos.x -= this.directionX * antiSlip;
+          pos.x -= this.lastDirectionX * antiSlip;
         }
       }
       this._translate(pos.x, pos.y);
