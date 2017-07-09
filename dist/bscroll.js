@@ -1,5 +1,5 @@
 /*!
- * better-scroll v0.3.2
+ * better-scroll v0.3.3
  * (c) 2016-2017 ustbhuangyi
  * Released under the MIT License.
  */
@@ -766,8 +766,8 @@ var BScroll$1 = function (_EventEmitter) {
           stopEl = _options$autoScroll.stopEl,
           maxSpeed = _options$autoScroll.maxSpeed;
 
-      var lastDirectionX = 0;
-      var lastDirectionY = 0;
+      this.lastDirectionX = 0;
+      this.lastDirectionY = 0;
       var isContinue = false;
       this.scrollStamp = 0;
       var stopTop = void 0;
@@ -818,14 +818,14 @@ var BScroll$1 = function (_EventEmitter) {
             }
           }
 
-          if (!isContinue || !lastDirectionY || lastDirectionY !== _this3.directionY) {
+          if (!isContinue || !_this3.lastDirectionY || _this3.lastDirectionY !== _this3.directionY) {
             var speed = Math.abs(delta.y) * 2 / duration * 1000 * initialRate;
             _this3.speed = speed;
           } else {
             _this3.speed += increase;
           }
           _this3.speed = Math.min(_this3.speed, maxSpeed);
-          lastDirectionY = _this3.directionY;
+          _this3.lastDirectionY = _this3.directionY;
           time = distanceY / _this3.speed * 1000;
         } else {
           if (_this3.directionX === 1) {
@@ -848,14 +848,14 @@ var BScroll$1 = function (_EventEmitter) {
             }
           }
 
-          if (!isContinue || !lastDirectionX || lastDirectionX !== _this3.directionX) {
+          if (!isContinue || !_this3.lastDirectionX || _this3.lastDirectionX !== _this3.directionX) {
             var _speed = Math.abs(delta.x) * 2 / duration * 1000 * initialRate;
             _this3.speed = _speed;
           } else {
             _this3.speed += increase;
           }
           _this3.speed = Math.min(_this3.speed, maxSpeed);
-          lastDirectionX = _this3.directionX;
+          _this3.lastDirectionX = _this3.directionX;
           time = distanceX / _this3.speed * 1000;
         }
 
@@ -1437,9 +1437,9 @@ var BScroll$1 = function (_EventEmitter) {
         if (this.options.autoScroll && this.speed) {
           var antiSlip = this.speed / 45 + Math.pow(this.speed / 230, 2);
           if (this.options.autoScroll.direction === 'vertical') {
-            pos.y -= this.directionY * antiSlip;
+            pos.y -= this.lastDirectionY * antiSlip;
           } else {
-            pos.x -= this.directionX * antiSlip;
+            pos.x -= this.lastDirectionX * antiSlip;
           }
         }
         this._translate(pos.x, pos.y);
@@ -1630,7 +1630,7 @@ var BScroll$1 = function (_EventEmitter) {
   return BScroll;
 }(EventEmitter);
 
-BScroll$1.Version = '0.3.2';
+BScroll$1.Version = '0.3.3';
 
 return BScroll$1;
 
