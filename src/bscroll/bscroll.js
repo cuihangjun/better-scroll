@@ -22,7 +22,7 @@ import {EventEmitter} from '../util/eventEmitter';
 import {momentum} from '../util/momentum';
 
 /* eslint-disable no-unused-vars */
-// import vConsole from 'vconsole';
+import vConsole from 'vconsole';
 
 const TOUCH_EVENT = 1;
 
@@ -644,6 +644,7 @@ export class BScroll extends EventEmitter {
     if (this.resetPosition(this.options.bounceTime, ease.bounce)) {
       return;
     }
+
     this.isInTransition = false;
     // ensures that the last position is rounded
     let newX = Math.round(this.x);
@@ -970,9 +971,13 @@ export class BScroll extends EventEmitter {
       if (this.options.autoScroll && this.speed) {
         let antiSlip = (this.speed / 45 + Math.pow(this.speed / 230, 2));
         if (this.options.autoScroll.direction === 'vertical') {
-          pos.y -= this.lastDirectionY * antiSlip;
+          if (pos.y < 0 && pos.y > this.maxScrollY) {
+            pos.y -= this.lastDirectionY * antiSlip;
+          }
         } else {
-          pos.x -= this.lastDirectionX * antiSlip;
+          if (pos.x < 0 && pos.x > this.maxScrollX) {
+            pos.x -= this.lastDirectionX * antiSlip;
+          }
         }
       }
       this._translate(pos.x, pos.y);
