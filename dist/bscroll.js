@@ -1,13 +1,15 @@
 /*!
- * better-scroll v0.3.3
+ * better-scroll v0.3.4
  * (c) 2016-2017 ustbhuangyi
  * Released under the MIT License.
  */
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-	typeof define === 'function' && define.amd ? define(factory) :
-	(global.BScroll = factory());
-}(this, (function () { 'use strict';
+	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('vconsole')) :
+	typeof define === 'function' && define.amd ? define(['vconsole'], factory) :
+	(global.BScroll = factory(global.vconsole));
+}(this, (function (vconsole) { 'use strict';
+
+vconsole = vconsole && 'default' in vconsole ? vconsole['default'] : vconsole;
 
 var elementStyle = document.createElement('div').style;
 
@@ -444,8 +446,6 @@ function momentum(current, start, time, lowerMargin, wrapperSize, options) {
 }
 
 /* eslint-disable no-unused-vars */
-// import vConsole from 'vconsole';
-
 var TOUCH_EVENT = 1;
 
 var BScroll$1 = function (_EventEmitter) {
@@ -1089,6 +1089,7 @@ var BScroll$1 = function (_EventEmitter) {
       if (this.resetPosition(this.options.bounceTime, ease.bounce)) {
         return;
       }
+
       this.isInTransition = false;
       // ensures that the last position is rounded
       var newX = Math.round(this.x);
@@ -1437,9 +1438,13 @@ var BScroll$1 = function (_EventEmitter) {
         if (this.options.autoScroll && this.speed) {
           var antiSlip = this.speed / 45 + Math.pow(this.speed / 230, 2);
           if (this.options.autoScroll.direction === 'vertical') {
-            pos.y -= this.lastDirectionY * antiSlip;
+            if (pos.y < 0 && pos.y > this.maxScrollY) {
+              pos.y -= this.lastDirectionY * antiSlip;
+            }
           } else {
-            pos.x -= this.lastDirectionX * antiSlip;
+            if (pos.x < 0 && pos.x > this.maxScrollX) {
+              pos.x -= this.lastDirectionX * antiSlip;
+            }
           }
         }
         this._translate(pos.x, pos.y);
@@ -1630,7 +1635,7 @@ var BScroll$1 = function (_EventEmitter) {
   return BScroll;
 }(EventEmitter);
 
-BScroll$1.Version = '0.3.3';
+BScroll$1.Version = '0.3.4';
 
 return BScroll$1;
 
